@@ -23,6 +23,34 @@ const createEmptyGrid = (rows, cols) => {
   return Array(rows).fill(0).map(() => Array(cols).fill(CELL_PATH));
 };
 
+// Custom Confirmation Modal Component
+function ConfirmationModal({ message, onConfirm, onCancel, isOpen }) {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4">
+      <div className="bg-gray-800 rounded-lg shadow-xl p-8 max-w-sm w-full border border-gray-700">
+        <p className="text-white text-lg text-center mb-6">{message}</p>
+        <div className="flex justify-around gap-4">
+          <button
+            onClick={onConfirm}
+            className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg transition duration-300 ease-in-out transform hover:scale-105 shadow-lg"
+          >
+            Confirm
+          </button>
+          <button
+            onClick={onCancel}
+            className="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-6 rounded-lg transition duration-300 ease-in-out transform hover:scale-105 shadow-lg"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
 // Main App Component
 export default function App() {
   const [db, setDb] = useState(null);
@@ -33,6 +61,12 @@ export default function App() {
 
   const [message, setMessage] = useState(''); // Global message for user feedback
   const [showMessage, setShowMessage] = useState(false);
+
+  // State for the custom confirmation modal
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+  const [confirmAction, setConfirmAction] = useState(null);
+  const [confirmMessage, setConfirmMessage] = useState('');
+
 
   // Initialize Firebase and set up authentication
   useEffect(() => {
@@ -82,12 +116,36 @@ export default function App() {
     return () => clearTimeout(timer);
   }, []);
 
+  // Function to open confirmation modal
+  const openConfirmModal = useCallback((msg, action) => {
+    setConfirmMessage(msg);
+    setConfirmAction(() => action); // Use a function to store the action
+    setIsConfirmModalOpen(true);
+  }, []);
+
+  // Function to handle confirmation
+  const handleConfirm = useCallback(() => {
+    if (confirmAction) {
+      confirmAction();
+    }
+    setIsConfirmModalOpen(false);
+    setConfirmAction(null);
+    setConfirmMessage('');
+  }, [confirmAction]);
+
+  // Function to handle cancel
+  const handleCancel = useCallback(() => {
+    setIsConfirmModalOpen(false);
+    setConfirmAction(null);
+    setConfirmMessage('');
+  }, []);
+
   // Render different views based on state
   const renderView = () => {
     if (!db || !auth || !userId) {
       return (
-        <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 text-white p-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
+        <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-gray-900 to-black text-white p-4 font-inter">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-400"></div>
           <p className="mt-4 text-lg">Loading Firebase and authenticating...</p>
           {showMessage && (
             <div className="fixed bottom-4 left-1/2 -translate-x-1/2 bg-red-600 text-white px-4 py-2 rounded-lg shadow-lg z-50">
@@ -99,8 +157,10 @@ export default function App() {
     }
 
     return (
-      <div className="min-h-screen bg-gray-900 text-white flex flex-col items-center py-8">
-        <h1 className="text-4xl font-bold mb-8 text-indigo-400">Maze Master</h1>
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 to-black text-white flex flex-col items-center py-8 font-inter">
+        <h1 className="text-5xl font-extrabold mb-8 text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-600 drop-shadow-lg">
+          Maze Master
+        </h1>
         <p className="text-sm mb-4 text-gray-400">Your User ID: <span className="font-mono text-blue-300 break-all">{userId}</span></p>
 
         {showMessage && (
@@ -116,6 +176,7 @@ export default function App() {
             setView={setView}
             setSelectedMaze={setSelectedMaze}
             showMessage={showMessageWithDelay}
+            openConfirmModal={openConfirmModal} // Pass the modal opener
           />
         )}
         {view === 'builder' && (
@@ -135,6 +196,13 @@ export default function App() {
             showMessage={showMessageWithDelay}
           />
         )}
+
+        <ConfirmationModal
+          isOpen={isConfirmModalOpen}
+          message={confirmMessage}
+          onConfirm={handleConfirm}
+          onCancel={handleCancel}
+        />
       </div>
     );
   };
@@ -143,7 +211,7 @@ export default function App() {
 }
 
 // Maze Lobby Component
-function MazeLobby({ db, userId, setView, setSelectedMaze, showMessage }) {
+function MazeLobby({ db, userId, setView, setSelectedMaze, showMessage, openConfirmModal }) {
   const [mazes, setMazes] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -188,8 +256,9 @@ function MazeLobby({ db, userId, setView, setSelectedMaze, showMessage }) {
     setView('builder');
   };
 
-  const handleDeleteMaze = async (mazeId) => {
-    if (window.confirm("Are you sure you want to delete this maze?")) { // Use window.confirm for simplicity, ideally a custom modal
+  const handleDeleteMaze = (mazeId) => {
+    // Open custom confirmation modal instead of window.confirm
+    openConfirmModal("Are you sure you want to delete this maze? This action cannot be undone.", async () => {
       try {
         await deleteDoc(doc(db, `artifacts/${appId}/public/data/mazes`, mazeId));
         showMessage('Maze deleted successfully!');
@@ -197,55 +266,55 @@ function MazeLobby({ db, userId, setView, setSelectedMaze, showMessage }) {
         console.error("Error deleting maze:", error);
         showMessage(`Error deleting maze: ${error.message}`);
       }
-    }
+    });
   };
 
   return (
-    <div className="w-full max-w-4xl p-4 bg-gray-800 rounded-lg shadow-xl">
+    <div className="w-full max-w-4xl p-4 bg-gray-800 rounded-lg shadow-2xl border border-gray-700">
       <h2 className="text-3xl font-bold mb-6 text-center text-blue-400">Public Mazes</h2>
-      <div className="flex justify-center mb-6">
+      <div className="flex justify-center mb-8">
         <button
           onClick={handleCreateNew}
-          className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg transition duration-300 ease-in-out transform hover:scale-105 shadow-md"
+          className="bg-gradient-to-r from-green-500 to-teal-600 hover:from-green-600 hover:to-teal-700 text-white font-bold py-3 px-8 rounded-full transition duration-300 ease-in-out transform hover:scale-105 shadow-lg hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-75"
         >
-          + Create New Maze
+          <i className="fas fa-plus-circle mr-3"></i> Create New Maze
         </button>
       </div>
 
       {loading ? (
-        <p className="text-center text-gray-400">Loading mazes...</p>
+        <p className="text-center text-gray-400 animate-pulse">Loading mazes...</p>
       ) : mazes.length === 0 ? (
-        <p className="text-center text-gray-400">No mazes available. Be the first to create one!</p>
+        <p className="text-center text-gray-400 text-lg">No mazes available. Be the first to create one!</p>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {mazes.map((maze) => (
-            <div key={maze.id} className="bg-gray-700 p-4 rounded-lg shadow-md flex flex-col justify-between">
+            <div key={maze.id} className="bg-gray-700 p-6 rounded-xl shadow-lg flex flex-col justify-between border border-gray-600 hover:border-blue-500 transition-all duration-200 ease-in-out">
               <div>
-                <h3 className="text-xl font-semibold text-white mb-2">{maze.name}</h3>
-                <p className="text-sm text-gray-400 mb-3">
-                  Created by: <span className="font-mono">{maze.creatorId === userId ? 'You' : maze.creatorId}</span>
+                <h3 className="text-2xl font-semibold text-white mb-2 truncate">{maze.name}</h3>
+                <p className="text-sm text-gray-400 mb-4">
+                  Created by: <span className="font-mono text-blue-300 break-all">{maze.creatorId === userId ? 'You' : maze.creatorId}</span>
                 </p>
               </div>
-              <div className="flex flex-wrap gap-2 mt-auto">
+              <div className="flex flex-wrap gap-3 mt-auto justify-end">
                 <button
                   onClick={() => handlePlayMaze(maze)}
-                  className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300 ease-in-out transform hover:scale-105 text-sm"
+                  className="flex-1 min-w-[80px] bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300 ease-in-out transform hover:scale-105 text-sm shadow-md"
                 >
-                  Play
+                  <i className="fas fa-play mr-1"></i> Play
                 </button>
                 {maze.creatorId === userId && (
                   <>
                     <button
                       onClick={() => handleEditMaze(maze)}
-                      className="flex-1 bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300 ease-in-out transform hover:scale-105 text-sm"
+                      className="flex-1 min-w-[80px] bg-gradient-to-r from-yellow-500 to-orange-600 hover:from-yellow-600 hover:to-orange-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300 ease-in-out transform hover:scale-105 text-sm shadow-md"
                     >
-                      Edit
+                      <i className="fas fa-edit mr-1"></i> Edit
                     </button>
                     <button
                       onClick={() => handleDeleteMaze(maze.id)}
-                      className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300 ease-in-out transform hover:scale-105 text-sm"
+                      className="flex-1 min-w-[80px] bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300 ease-in-out transform hover:scale-105 text-sm shadow-md"
                     >
-                      Delete
+                      <i className="fas fa-trash-alt mr-1"></i> Delete
                     </button>
                   </>
                 )}
@@ -288,24 +357,24 @@ function MazeBuilder({ db, userId, setView, selectedMaze, setSelectedMaze, showM
     setGrid(prevGrid => {
       const newGrid = prevGrid.map(rowArr => [...rowArr]);
 
-      // Clear existing start/end if placing a new one
-      if (currentTool === CELL_START && startPoint) {
-        newGrid[startPoint.y][startPoint.x] = CELL_PATH;
-      }
-      if (currentTool === CELL_END && endPoint) {
-        newGrid[endPoint.y][endPoint.x] = CELL_PATH;
-      }
-
-      // Update the cell
-      newGrid[row][col] = currentTool;
-
-      // Update start/end points states
+      // If placing START or END, ensure it's on a path and clear old one
       if (currentTool === CELL_START) {
+        if (newGrid[row][col] === CELL_WALL) return prevGrid; // Can't place start on a wall
+        if (startPoint) newGrid[startPoint.y][startPoint.x] = CELL_PATH;
         setStartPoint({ x: col, y: row });
       } else if (currentTool === CELL_END) {
+        if (newGrid[row][col] === CELL_WALL) return prevGrid; // Can't place end on a wall
+        if (endPoint) newGrid[endPoint.y][endPoint.x] = CELL_PATH;
         setEndPoint({ x: col, y: row });
+      } else if (currentTool === CELL_WALL || currentTool === CELL_PATH) {
+        // If drawing wall/path, make sure not to overwrite start/end points accidentally
+        if ((startPoint && startPoint.x === col && startPoint.y === row) ||
+            (endPoint && endPoint.x === col && endPoint.y === row)) {
+          return prevGrid; // Do not overwrite start/end with wall/path
+        }
       }
 
+      newGrid[row][col] = currentTool;
       return newGrid;
     });
   }, [startPoint, endPoint]);
@@ -338,6 +407,10 @@ function MazeBuilder({ db, userId, setView, selectedMaze, setSelectedMaze, showM
       showMessage('Please set an end point.');
       return;
     }
+    if (startPoint.x === endPoint.x && startPoint.y === endPoint.y) {
+        showMessage('Start and End points cannot be the same!');
+        return;
+    }
 
     try {
       const mazeData = {
@@ -367,7 +440,7 @@ function MazeBuilder({ db, userId, setView, selectedMaze, setSelectedMaze, showM
   };
 
   const getCellClassName = (cellType, row, col) => {
-    let baseClasses = "w-6 h-6 sm:w-8 sm:h-8 border border-gray-600 flex items-center justify-center transition-colors duration-100 ease-in-out";
+    let baseClasses = "w-6 h-6 sm:w-8 sm:h-8 border border-gray-700 flex items-center justify-center transition-colors duration-100 ease-in-out text-white text-lg";
     if (cellType === CELL_PATH) return `${baseClasses} bg-gray-700 hover:bg-gray-600`;
     if (cellType === CELL_WALL) return `${baseClasses} bg-gray-400 hover:bg-gray-300`;
     if (cellType === CELL_START) return `${baseClasses} bg-green-500 hover:bg-green-400`;
@@ -376,8 +449,8 @@ function MazeBuilder({ db, userId, setView, selectedMaze, setSelectedMaze, showM
   };
 
   return (
-    <div className="w-full max-w-4xl p-4 bg-gray-800 rounded-lg shadow-xl">
-      <h2 className="text-3xl font-bold mb-6 text-center text-yellow-400">
+    <div className="w-full max-w-4xl p-4 bg-gray-800 rounded-lg shadow-2xl border border-gray-700">
+      <h2 className="text-4xl font-bold mb-8 text-center text-yellow-400">
         {selectedMaze ? `Edit Maze: ${selectedMaze.name}` : 'Create New Maze'}
       </h2>
 
@@ -389,39 +462,39 @@ function MazeBuilder({ db, userId, setView, selectedMaze, setSelectedMaze, showM
           placeholder="Enter Maze Name"
           value={mazeName}
           onChange={(e) => setMazeName(e.target.value)}
-          className="flex-grow p-3 rounded-lg bg-gray-700 text-white placeholder-gray-400 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="flex-grow p-3 rounded-lg bg-gray-700 text-white placeholder-gray-400 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-inner"
         />
       </div>
 
-      <div className="mb-6 flex flex-wrap justify-center gap-3">
+      <div className="mb-8 flex flex-wrap justify-center gap-3">
         <button
           onClick={() => setTool(CELL_WALL)}
-          className={`py-2 px-4 rounded-lg font-semibold transition duration-200 ${tool === CELL_WALL ? 'bg-gray-400 text-gray-900 shadow-md' : 'bg-gray-600 text-white hover:bg-gray-500'}`}
+          className={`py-2 px-4 rounded-lg font-semibold transition duration-200 ease-in-out transform hover:scale-105 shadow-md ${tool === CELL_WALL ? 'bg-gray-400 text-gray-900 border-2 border-gray-300' : 'bg-gray-600 text-white hover:bg-gray-500'}`}
         >
           <i className="fas fa-hammer mr-2"></i> Draw Wall
         </button>
         <button
           onClick={() => setTool(CELL_PATH)}
-          className={`py-2 px-4 rounded-lg font-semibold transition duration-200 ${tool === CELL_PATH ? 'bg-gray-700 text-gray-100 shadow-md' : 'bg-gray-600 text-white hover:bg-gray-500'}`}
+          className={`py-2 px-4 rounded-lg font-semibold transition duration-200 ease-in-out transform hover:scale-105 shadow-md ${tool === CELL_PATH ? 'bg-gray-700 text-gray-100 border-2 border-gray-600' : 'bg-gray-600 text-white hover:bg-gray-500'}`}
         >
           <i className="fas fa-route mr-2"></i> Draw Path
         </button>
         <button
           onClick={() => setTool(CELL_START)}
-          className={`py-2 px-4 rounded-lg font-semibold transition duration-200 ${tool === CELL_START ? 'bg-green-500 text-white shadow-md' : 'bg-green-700 text-white hover:bg-green-600'}`}
+          className={`py-2 px-4 rounded-lg font-semibold transition duration-200 ease-in-out transform hover:scale-105 shadow-md ${tool === CELL_START ? 'bg-green-500 text-white border-2 border-green-400' : 'bg-green-700 text-white hover:bg-green-600'}`}
         >
           <i className="fas fa-flag-checkered mr-2"></i> Set Start
         </button>
         <button
           onClick={() => setTool(CELL_END)}
-          className={`py-2 px-4 rounded-lg font-semibold transition duration-200 ${tool === CELL_END ? 'bg-red-500 text-white shadow-md' : 'bg-red-700 text-white hover:bg-red-600'}`}
+          className={`py-2 px-4 rounded-lg font-semibold transition duration-200 ease-in-out transform hover:scale-105 shadow-md ${tool === CELL_END ? 'bg-red-500 text-white border-2 border-red-400' : 'bg-red-700 text-white hover:bg-red-600'}`}
         >
           <i className="fas fa-bullseye mr-2"></i> Set End
         </button>
       </div>
 
       <div
-        className="grid mx-auto bg-gray-900 border-2 border-gray-700 rounded-lg overflow-hidden"
+        className="grid mx-auto bg-gray-900 border-2 border-gray-600 rounded-lg overflow-hidden"
         style={{
           gridTemplateColumns: `repeat(${GRID_COLS}, minmax(0, 1fr))`,
           gridTemplateRows: `repeat(${GRID_ROWS}, minmax(0, 1fr))`,
@@ -440,8 +513,8 @@ function MazeBuilder({ db, userId, setView, selectedMaze, setSelectedMaze, showM
               onMouseEnter={() => handleMouseEnter(rowIndex, colIndex)}
               onMouseUp={handleMouseUp}
             >
-              {cell === CELL_START && <i className="fas fa-play text-white text-lg"></i>}
-              {cell === CELL_END && <i className="fas fa-bullseye text-white text-lg"></i>}
+              {cell === CELL_START && <i className="fas fa-play"></i>}
+              {cell === CELL_END && <i className="fas fa-bullseye"></i>}
             </div>
           ))
         )}
@@ -450,13 +523,13 @@ function MazeBuilder({ db, userId, setView, selectedMaze, setSelectedMaze, showM
       <div className="mt-8 flex justify-center gap-4">
         <button
           onClick={handleSaveMaze}
-          className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-3 px-6 rounded-lg transition duration-300 ease-in-out transform hover:scale-105 shadow-lg"
+          className="bg-gradient-to-r from-purple-600 to-indigo-700 hover:from-purple-700 hover:to-indigo-800 text-white font-bold py-3 px-8 rounded-full transition duration-300 ease-in-out transform hover:scale-105 shadow-lg hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-75"
         >
           Save Maze
         </button>
         <button
           onClick={() => { setView('lobby'); setSelectedMaze(null); }}
-          className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-6 rounded-lg transition duration-300 ease-in-out transform hover:scale-105 shadow-lg"
+          className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-8 rounded-full transition duration-300 ease-in-out transform hover:scale-105 shadow-lg hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-75"
         >
           Back to Lobby
         </button>
@@ -513,15 +586,20 @@ function MazePlayer({ maze, setView, showMessage }) {
       return;
     }
 
+    // Check if moving to an existing start/end point, allow it.
+    // If moving onto a path, mark it as visited.
+    const isMovingToStart = (newX === maze.start.x && newY === maze.start.y);
+    const isMovingToEnd = (newX === maze.end.x && newY === maze.end.y);
+
     setPlayerPos({ x: newX, y: newY });
 
-    // Mark current path as visited (only if it's a path cell)
-    if (parsedGrid[newY][newX] === CELL_PATH) {
-      setPathVisited(prev => ({
-        ...prev,
-        [`${newY}-${newX}`]: true
-      }));
+    if (parsedGrid[newY][newX] === CELL_PATH || isMovingToStart) {
+        setPathVisited(prev => ({
+            ...prev,
+            [`${newY}-${newX}`]: true
+        }));
     }
+
 
     // Check for win condition
     if (newX === maze.end.x && newY === maze.end.y) {
@@ -539,7 +617,7 @@ function MazePlayer({ maze, setView, showMessage }) {
   }, [handleKeyDown]);
 
   const getCellClassName = (cellType, row, col) => {
-    let baseClasses = "w-6 h-6 sm:w-8 sm:h-8 border border-gray-600 flex items-center justify-center";
+    let baseClasses = "w-6 h-6 sm:w-8 sm:h-8 border border-gray-700 flex items-center justify-center text-white text-lg";
     if (cellType === CELL_WALL) return `${baseClasses} bg-gray-400`;
     if (cellType === CELL_START) return `${baseClasses} bg-green-500`;
     if (cellType === CELL_END) return `${baseClasses} bg-red-500`;
@@ -552,10 +630,10 @@ function MazePlayer({ maze, setView, showMessage }) {
   };
 
   return (
-    <div className="w-full max-w-4xl p-4 bg-gray-800 rounded-lg shadow-xl" tabIndex={0} ref={playerRef}>
-      <h2 className="text-3xl font-bold mb-6 text-center text-green-400">Playing: {maze.name}</h2>
+    <div className="w-full max-w-4xl p-4 bg-gray-800 rounded-lg shadow-2xl border border-gray-700" tabIndex={0} ref={playerRef}>
+      <h2 className="text-4xl font-bold mb-8 text-center text-green-400">Playing: <span className="text-blue-300">{maze.name}</span></h2>
       <div
-        className="grid mx-auto bg-gray-900 border-2 border-gray-700 rounded-lg overflow-hidden relative"
+        className="grid mx-auto bg-gray-900 border-2 border-gray-600 rounded-lg overflow-hidden relative"
         style={{
           gridTemplateColumns: `repeat(${GRID_COLS}, minmax(0, 1fr))`,
           gridTemplateRows: `repeat(${GRID_ROWS}, minmax(0, 1fr))`,
@@ -571,18 +649,19 @@ function MazePlayer({ maze, setView, showMessage }) {
               className={getCellClassName(cell, rowIndex, colIndex)}
             >
               {/* Render start/end icons even when playing */}
-              {cell === CELL_START && <i className="fas fa-play text-white text-lg"></i>}
-              {cell === CELL_END && <i className="fas fa-bullseye text-white text-lg"></i>}
+              {cell === CELL_START && <i className="fas fa-play"></i>}
+              {cell === CELL_END && <i className="fas fa-bullseye"></i>}
             </div>
           ))
         )}
         {/* Player icon */}
         <div
-          className="absolute bg-purple-500 rounded-full w-5 h-5 sm:w-7 sm:h-7 transition-all duration-75 ease-linear flex items-center justify-center"
+          className="absolute bg-purple-500 rounded-full w-5 h-5 sm:w-7 sm:h-7 transition-all duration-75 ease-linear flex items-center justify-center z-10 border-2 border-purple-300 shadow-md"
           style={{
-            left: `${playerPos.x * (32 / (GRID_COLS/GRID_COLS))}px`, // 32px is sm:w-8 size for grid cell
-            top: `${playerPos.y * (32 / (GRID_ROWS/GRID_ROWS))}px`,
-            transform: `translate(${32 / (GRID_COLS/GRID_COLS) * 0.1}px, ${32 / (GRID_ROWS/GRID_ROWS) * 0.1}px)` // Center the player icon visually within the cell
+            left: `${playerPos.x * (32)}px`, // 32px is sm:w-8 size for grid cell
+            top: `${playerPos.y * (32)}px`,
+            // Centering the player icon within the cell
+            transform: `translate(${ (32 - (window.innerWidth < 640 ? 20 : 28)) / 2}px, ${ (32 - (window.innerWidth < 640 ? 20 : 28)) / 2}px)`
           }}
         >
           <i className="fas fa-person text-white text-sm"></i>
@@ -592,7 +671,7 @@ function MazePlayer({ maze, setView, showMessage }) {
       <div className="mt-8 flex justify-center">
         <button
           onClick={() => setView('lobby')}
-          className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-6 rounded-lg transition duration-300 ease-in-out transform hover:scale-105 shadow-lg"
+          className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-8 rounded-full transition duration-300 ease-in-out transform hover:scale-105 shadow-lg hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-75"
         >
           Back to Lobby
         </button>
