@@ -1,0 +1,158 @@
+/* Custom CSS for Maze Master Game */
+
+:root {
+  --primary-bg-start: #1a202c; /* gray-900 */
+  --primary-bg-end: #000000;   /* black */
+  --button-transition-duration: 0.3s;
+  --button-shadow-color: rgba(0, 0, 0, 0.4);
+  --player-transition-duration: 0.1s;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  margin: 0;
+  overflow-x: hidden; /* Prevent horizontal scrolling */
+}
+
+/* General button hover effect */
+.button-glow {
+  transition: all var(--button-transition-duration) ease-in-out;
+  box-shadow: 0 4px 10px var(--button-shadow-color);
+}
+.button-glow:hover {
+  transform: translateY(-2px) scale(1.03);
+  box-shadow: 0 8px 15px var(--button-shadow-color);
+}
+.button-glow:active {
+  transform: translateY(1px) scale(0.98);
+  box-shadow: 0 2px 5px var(--button-shadow-color);
+}
+
+/* Message fade in/out animation */
+.message-fade-in-out {
+  opacity: 0;
+  animation: fadeInOut 3s forwards; /* Adjust duration as needed */
+}
+
+@keyframes fadeInOut {
+  0% { opacity: 0; transform: translate(-50%, 20px); }
+  10% { opacity: 1; transform: translate(-50%, 0); }
+  90% { opacity: 1; transform: translate(-50%, 0); }
+  100% { opacity: 0; transform: translate(-50%, 20px); }
+}
+
+/* Player movement transition */
+.player-transition {
+  transition: left var(--player-transition-duration) linear, top var(--player-transition-duration) linear, transform var(--player-transition-duration) ease-out;
+}
+
+/* Ensure images and SVGs scale responsively within containers */
+img, svg {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Base styles for the main container (App component's root div) */
+.app-container {
+  min-height: 100vh;
+  background: linear-gradient(to bottom right, var(--primary-bg-start), var(--primary-bg-end));
+  color: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem 1rem; /* Equivalent to py-8 px-4 */
+}
+
+/* Styles for loading spinner */
+.loading-spinner {
+  border-bottom-color: #6366f1; /* indigo-400 */
+}
+
+/* Main content card styles */
+.content-card {
+  width: 100%;
+  max-width: 64rem; /* max-w-4xl */
+  padding: 1.5rem; /* p-6 */
+  background-color: #374151; /* gray-800 */
+  border-radius: 0.5rem; /* rounded-lg */
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.4); /* shadow-2xl */
+  border: 1px solid #4b5563; /* border-gray-700 */
+}
+
+/* Input field styling */
+.maze-input {
+  padding: 0.75rem; /* p-3 */
+  border-radius: 0.5rem; /* rounded-lg */
+  background-color: #4b5563; /* gray-700 */
+  color: white;
+  border: 1px solid #6b7280; /* border-gray-600 */
+  box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.2); /* shadow-inner */
+}
+.maze-input::placeholder {
+  color: #9ca3af; /* gray-400 */
+}
+.maze-input:focus {
+  outline: none;
+  border-color: #3b82f6; /* blue-500 */
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5); /* ring-blue-500 */
+}
+
+/* Custom Modal specific styles */
+.modal-overlay {
+  background-color: rgba(0, 0, 0, 0.7);
+}
+.modal-content {
+  background-color: #374151; /* gray-800 */
+  border: 1px solid #4b5563; /* gray-700 */
+}
+
+/* Grid Specific Styles */
+.maze-grid {
+  background-color: #1f2937; /* gray-900 */
+  border: 2px solid #4b5563; /* border-gray-600 */
+  border-radius: 0.5rem; /* rounded-lg */
+  overflow: hidden;
+  box-sizing: content-box; /* Ensures padding/border don't add to element's total width/height */
+}
+
+/* Specific cell styles (used by getCellClassName in JS, kept here for reference or if expanded) */
+.cell {
+  border: 1px solid #4b5563; /* gray-700 */
+  transition: background-color 0.1s ease-in-out;
+}
+.cell-path {
+  background-color: #4b5563; /* gray-700 */
+}
+.cell-path:hover {
+  background-color: #6b7280; /* gray-600 */
+}
+.cell-wall {
+  background-color: #9ca3af; /* gray-400 */
+}
+.cell-wall:hover {
+  background-color: #d1d5db; /* gray-300 */
+}
+.cell-start {
+  background-color: #22c55e; /* green-500 */
+}
+.cell-start:hover {
+  background-color: #4ade80; /* green-400 */
+}
+.cell-end {
+  background-color: #ef4444; /* red-500 */
+}
+.cell-end:hover {
+  background-color: #f87171; /* red-400 */
+}
+.cell-player-path {
+  background-color: #1d4ed8; /* blue-700 */
+}
+
+/* Player Dot */
+.player-dot {
+  background-color: #a855f7; /* purple-500 */
+  border: 2px solid #d8b4fe; /* purple-300 */
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -2px rgba(0, 0, 0, 0.3); /* shadow-md */
+}
+
