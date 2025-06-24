@@ -34,13 +34,13 @@ function ConfirmationModal({ message, onConfirm, onCancel, isOpen }) {
         <div className="flex justify-around gap-4">
           <button
             onClick={onConfirm}
-            className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg transition duration-300 ease-in-out transform hover:scale-105 shadow-lg"
+            className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg transition-all duration-300 ease-in-out transform hover:scale-105 shadow-lg button-glow"
           >
             Confirm
           </button>
           <button
             onClick={onCancel}
-            className="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-6 rounded-lg transition duration-300 ease-in-out transform hover:scale-105 shadow-lg"
+            className="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-6 rounded-lg transition-all duration-300 ease-in-out transform hover:scale-105 shadow-lg button-glow"
           >
             Cancel
           </button>
@@ -148,7 +148,7 @@ export default function App() {
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-400"></div>
           <p className="mt-4 text-lg">Loading Firebase and authenticating...</p>
           {showMessage && (
-            <div className="fixed bottom-4 left-1/2 -translate-x-1/2 bg-red-600 text-white px-4 py-2 rounded-lg shadow-lg z-50">
+            <div className="fixed bottom-4 left-1/2 -translate-x-1/2 bg-red-600 text-white px-4 py-2 rounded-lg shadow-lg z-50 message-fade-in-out">
               {message}
             </div>
           )}
@@ -164,7 +164,7 @@ export default function App() {
         <p className="text-sm mb-4 text-gray-400">Your User ID: <span className="font-mono text-blue-300 break-all">{userId}</span></p>
 
         {showMessage && (
-          <div className="fixed bottom-4 left-1/2 -translate-x-1/2 bg-blue-600 text-white px-4 py-2 rounded-lg shadow-lg z-50">
+          <div className="fixed bottom-4 left-1/2 -translate-x-1/2 bg-blue-600 text-white px-4 py-2 rounded-lg shadow-lg z-50 message-fade-in-out">
             {message}
           </div>
         )}
@@ -203,6 +203,63 @@ export default function App() {
           onConfirm={handleConfirm}
           onCancel={handleCancel}
         />
+        {/* Custom CSS goes here */}
+        <style>
+          {`
+          :root {
+            --primary-bg-start: #1a202c; /* gray-900 */
+            --primary-bg-end: #000000;   /* black */
+            --button-transition-duration: 0.3s;
+            --button-shadow-color: rgba(0, 0, 0, 0.4);
+            --player-transition-duration: 0.1s;
+          }
+
+          body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            overflow-x: hidden; /* Prevent horizontal scrolling */
+          }
+
+          /* General button hover effect */
+          .button-glow {
+            transition: all var(--button-transition-duration) ease-in-out;
+            box-shadow: 0 4px 10px var(--button-shadow-color);
+          }
+          .button-glow:hover {
+            transform: translateY(-2px) scale(1.03);
+            box-shadow: 0 8px 15px var(--button-shadow-color);
+          }
+          .button-glow:active {
+            transform: translateY(1px) scale(0.98);
+            box-shadow: 0 2px 5px var(--button-shadow-color);
+          }
+
+          /* Message fade in/out animation */
+          .message-fade-in-out {
+            opacity: 0;
+            animation: fadeInOut 3s forwards; /* Adjust duration as needed */
+          }
+
+          @keyframes fadeInOut {
+            0% { opacity: 0; transform: translate(-50%, 20px); }
+            10% { opacity: 1; transform: translate(-50%, 0); }
+            90% { opacity: 1; transform: translate(-50%, 0); }
+            100% { opacity: 0; transform: translate(-50%, 20px); }
+          }
+
+          /* Player movement transition */
+          .player-transition {
+            transition: left var(--player-transition-duration) linear, top var(--player-transition-duration) linear, transform var(--player-transition-duration) ease-out;
+          }
+
+          /* Ensure images and SVGs scale responsively within containers */
+          img, svg {
+            max-width: 100%;
+            height: auto;
+            display: block;
+          }
+          `}
+        </style>
       </div>
     );
   };
@@ -275,7 +332,7 @@ function MazeLobby({ db, userId, setView, setSelectedMaze, showMessage, openConf
       <div className="flex justify-center mb-8">
         <button
           onClick={handleCreateNew}
-          className="bg-gradient-to-r from-green-500 to-teal-600 hover:from-green-600 hover:to-teal-700 text-white font-bold py-3 px-8 rounded-full transition duration-300 ease-in-out transform hover:scale-105 shadow-lg hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-75"
+          className="bg-gradient-to-r from-green-500 to-teal-600 hover:from-green-600 hover:to-teal-700 text-white font-bold py-3 px-8 rounded-full shadow-lg hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-75 button-glow"
         >
           <i className="fas fa-plus-circle mr-3"></i> Create New Maze
         </button>
@@ -298,7 +355,7 @@ function MazeLobby({ db, userId, setView, setSelectedMaze, showMessage, openConf
               <div className="flex flex-wrap gap-3 mt-auto justify-end">
                 <button
                   onClick={() => handlePlayMaze(maze)}
-                  className="flex-1 min-w-[80px] bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300 ease-in-out transform hover:scale-105 text-sm shadow-md"
+                  className="flex-1 min-w-[80px] bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-bold py-2 px-4 rounded-lg text-sm shadow-md button-glow"
                 >
                   <i className="fas fa-play mr-1"></i> Play
                 </button>
@@ -306,13 +363,13 @@ function MazeLobby({ db, userId, setView, setSelectedMaze, showMessage, openConf
                   <>
                     <button
                       onClick={() => handleEditMaze(maze)}
-                      className="flex-1 min-w-[80px] bg-gradient-to-r from-yellow-500 to-orange-600 hover:from-yellow-600 hover:to-orange-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300 ease-in-out transform hover:scale-105 text-sm shadow-md"
+                      className="flex-1 min-w-[80px] bg-gradient-to-r from-yellow-500 to-orange-600 hover:from-yellow-600 hover:to-orange-700 text-white font-bold py-2 px-4 rounded-lg text-sm shadow-md button-glow"
                     >
                       <i className="fas fa-edit mr-1"></i> Edit
                     </button>
                     <button
                       onClick={() => handleDeleteMaze(maze.id)}
-                      className="flex-1 min-w-[80px] bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white font-bold py-2 px-4 rounded-lg transition duration-300 ease-in-out transform hover:scale-105 text-sm shadow-md"
+                      className="flex-1 min-w-[80px] bg-gradient-to-r from-red-500 to-pink-600 hover:from-red-600 hover:to-pink-700 text-white font-bold py-2 px-4 rounded-lg text-sm shadow-md button-glow"
                     >
                       <i className="fas fa-trash-alt mr-1"></i> Delete
                     </button>
@@ -469,25 +526,25 @@ function MazeBuilder({ db, userId, setView, selectedMaze, setSelectedMaze, showM
       <div className="mb-8 flex flex-wrap justify-center gap-3">
         <button
           onClick={() => setTool(CELL_WALL)}
-          className={`py-2 px-4 rounded-lg font-semibold transition duration-200 ease-in-out transform hover:scale-105 shadow-md ${tool === CELL_WALL ? 'bg-gray-400 text-gray-900 border-2 border-gray-300' : 'bg-gray-600 text-white hover:bg-gray-500'}`}
+          className={`py-2 px-4 rounded-lg font-semibold shadow-md button-glow ${tool === CELL_WALL ? 'bg-gray-400 text-gray-900 border-2 border-gray-300' : 'bg-gray-600 text-white hover:bg-gray-500'}`}
         >
           <i className="fas fa-hammer mr-2"></i> Draw Wall
         </button>
         <button
           onClick={() => setTool(CELL_PATH)}
-          className={`py-2 px-4 rounded-lg font-semibold transition duration-200 ease-in-out transform hover:scale-105 shadow-md ${tool === CELL_PATH ? 'bg-gray-700 text-gray-100 border-2 border-gray-600' : 'bg-gray-600 text-white hover:bg-gray-500'}`}
+          className={`py-2 px-4 rounded-lg font-semibold shadow-md button-glow ${tool === CELL_PATH ? 'bg-gray-700 text-gray-100 border-2 border-gray-600' : 'bg-gray-600 text-white hover:bg-gray-500'}`}
         >
           <i className="fas fa-route mr-2"></i> Draw Path
         </button>
         <button
           onClick={() => setTool(CELL_START)}
-          className={`py-2 px-4 rounded-lg font-semibold transition duration-200 ease-in-out transform hover:scale-105 shadow-md ${tool === CELL_START ? 'bg-green-500 text-white border-2 border-green-400' : 'bg-green-700 text-white hover:bg-green-600'}`}
+          className={`py-2 px-4 rounded-lg font-semibold shadow-md button-glow ${tool === CELL_START ? 'bg-green-500 text-white border-2 border-green-400' : 'bg-green-700 text-white hover:bg-green-600'}`}
         >
           <i className="fas fa-flag-checkered mr-2"></i> Set Start
         </button>
         <button
           onClick={() => setTool(CELL_END)}
-          className={`py-2 px-4 rounded-lg font-semibold transition duration-200 ease-in-out transform hover:scale-105 shadow-md ${tool === CELL_END ? 'bg-red-500 text-white border-2 border-red-400' : 'bg-red-700 text-white hover:bg-red-600'}`}
+          className={`py-2 px-4 rounded-lg font-semibold shadow-md button-glow ${tool === CELL_END ? 'bg-red-500 text-white border-2 border-red-400' : 'bg-red-700 text-white hover:bg-red-600'}`}
         >
           <i className="fas fa-bullseye mr-2"></i> Set End
         </button>
@@ -523,13 +580,13 @@ function MazeBuilder({ db, userId, setView, selectedMaze, setSelectedMaze, showM
       <div className="mt-8 flex justify-center gap-4">
         <button
           onClick={handleSaveMaze}
-          className="bg-gradient-to-r from-purple-600 to-indigo-700 hover:from-purple-700 hover:to-indigo-800 text-white font-bold py-3 px-8 rounded-full transition duration-300 ease-in-out transform hover:scale-105 shadow-lg hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-75"
+          className="bg-gradient-to-r from-purple-600 to-indigo-700 hover:from-purple-700 hover:to-indigo-800 text-white font-bold py-3 px-8 rounded-full shadow-lg hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-75 button-glow"
         >
           Save Maze
         </button>
         <button
           onClick={() => { setView('lobby'); setSelectedMaze(null); }}
-          className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-8 rounded-full transition duration-300 ease-in-out transform hover:scale-105 shadow-lg hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-75"
+          className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-8 rounded-full shadow-lg hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-75 button-glow"
         >
           Back to Lobby
         </button>
@@ -589,7 +646,7 @@ function MazePlayer({ maze, setView, showMessage }) {
     // Check if moving to an existing start/end point, allow it.
     // If moving onto a path, mark it as visited.
     const isMovingToStart = (newX === maze.start.x && newY === maze.start.y);
-    const isMovingToEnd = (newX === maze.end.x && newY === maze.end.y);
+    // const isMovingToEnd = (newX === maze.end.x && newY === maze.end.y); // Not needed for path visited logic
 
     setPlayerPos({ x: newX, y: newY });
 
@@ -656,12 +713,12 @@ function MazePlayer({ maze, setView, showMessage }) {
         )}
         {/* Player icon */}
         <div
-          className="absolute bg-purple-500 rounded-full w-5 h-5 sm:w-7 sm:h-7 transition-all duration-75 ease-linear flex items-center justify-center z-10 border-2 border-purple-300 shadow-md"
+          className="absolute bg-purple-500 rounded-full w-5 h-5 sm:w-7 sm:h-7 flex items-center justify-center z-10 border-2 border-purple-300 shadow-md player-transition"
           style={{
-            left: `${playerPos.x * (32)}px`, // 32px is sm:w-8 size for grid cell
-            top: `${playerPos.y * (32)}px`,
-            // Centering the player icon within the cell
-            transform: `translate(${ (32 - (window.innerWidth < 640 ? 20 : 28)) / 2}px, ${ (32 - (window.innerWidth < 640 ? 20 : 28)) / 2}px)`
+            left: `${playerPos.x * (window.innerWidth < 640 ? 24 : 32)}px`, // 24px for w-6, 32px for sm:w-8
+            top: `${playerPos.y * (window.innerWidth < 640 ? 24 : 32)}px`,
+            // Centering the player icon visually within the cell
+            transform: `translate(${ ((window.innerWidth < 640 ? 24 : 32) - (window.innerWidth < 640 ? 20 : 28)) / 2}px, ${ ((window.innerWidth < 640 ? 24 : 32) - (window.innerWidth < 640 ? 20 : 28)) / 2}px)`
           }}
         >
           <i className="fas fa-person text-white text-sm"></i>
@@ -671,7 +728,7 @@ function MazePlayer({ maze, setView, showMessage }) {
       <div className="mt-8 flex justify-center">
         <button
           onClick={() => setView('lobby')}
-          className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-8 rounded-full transition duration-300 ease-in-out transform hover:scale-105 shadow-lg hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-75"
+          className="bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-8 rounded-full shadow-lg hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-75 button-glow"
         >
           Back to Lobby
         </button>
